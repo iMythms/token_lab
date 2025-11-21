@@ -3,18 +3,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { InputType } from '@/utils/converters';
-import type { TokenizerModel } from '@/utils/tokenizer';
 import { getAvailableModels } from '@/utils/tokenizer';
-import { FileJson, FileText, FileCode, Type } from 'lucide-react';
+import { FileJson, FileText, FileCode, Type, Brain, Cpu } from 'lucide-react';
 
 interface InputAreaProps {
   value: string;
   onChange: (value: string) => void;
   inputType: InputType;
   onInputTypeChange: (type: InputType) => void;
-  tokenizerModel: TokenizerModel;
-  onTokenizerModelChange: (model: TokenizerModel) => void;
+  tokenizerModel: string;
+  onTokenizerModelChange: (model: string) => void;
   error: string | null;
+  isTokenizerLoading: boolean;
 }
 
 const inputTypeIcons = {
@@ -32,6 +32,7 @@ export const InputArea: React.FC<InputAreaProps> = ({
   tokenizerModel,
   onTokenizerModelChange,
   error,
+  isTokenizerLoading,
 }) => {
   const availableModels = getAvailableModels();
   const Icon = inputTypeIcons[inputType] || FileText;
@@ -79,22 +80,30 @@ export const InputArea: React.FC<InputAreaProps> = ({
 
         <div className="space-y-3">
           <Label htmlFor="tokenizer-model" className="text-gray-900 font-semibold text-sm tracking-wide flex items-center gap-2">
-            <FileText className="w-4 h-4" />
+            <Brain className="w-4 h-4" />
             Tokenizer Model
           </Label>
-          <Select value={tokenizerModel} onValueChange={(value) => onTokenizerModelChange(value as TokenizerModel)}>
+          <Select value={tokenizerModel} onValueChange={(value) => onTokenizerModelChange(value)}>
             <SelectTrigger id="tokenizer-model" className="bg-white border-gray-300 text-gray-900 hover:border-gray-400 smooth-transition focus:ring-2 focus:ring-black/10">
-              <SelectValue />
+              <div className="flex items-center gap-2 w-full">
+                <SelectValue />
+                {isTokenizerLoading && (
+                  <div className="ml-auto animate-spin rounded-full h-3 w-3 border-b-2 border-gray-900"></div>
+                )}
+              </div>
             </SelectTrigger>
-            <SelectContent className="bg-white border-gray-200">
+            <SelectContent className="bg-white border-gray-200 max-h-[300px]">
               {availableModels.map((model) => (
                 <SelectItem key={model} value={model} className="focus:bg-gray-100 focus:text-gray-900">
-                  {model}{model.startsWith('claude-') ? ' *' : ''}
+                  <div className="flex items-center gap-2">
+                    {model.includes('GPT') ? <Cpu className="w-3 h-3 text-green-600" /> : 
+                     model.includes('Llama') ? <Brain className="w-3 h-3 text-blue-600" /> :
+                     model.includes('Mistral') ? <Brain className="w-3 h-3 text-purple-600" /> :
+                     <Brain className="w-3 h-3 text-gray-500" />}
+                    {model}
+                  </div>
                 </SelectItem>
               ))}
-              <div className="px-2 py-1 text-xs text-gray-500 border-t border-gray-200 mt-1">
-                * Claude models are approximations
-              </div>
             </SelectContent>
           </Select>
         </div>

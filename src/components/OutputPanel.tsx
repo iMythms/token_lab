@@ -3,16 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Hash } from 'lucide-react';
+import { Hash, Loader2 } from 'lucide-react';
 
 interface OutputPanelProps {
   title: string;
   content: string;
   tokenCount: number;
   language: string;
+  isLoading?: boolean;
 }
 
-export const OutputPanel: React.FC<OutputPanelProps> = ({ title, content, tokenCount, language }) => {
+export const OutputPanel: React.FC<OutputPanelProps> = ({ title, content, tokenCount, language, isLoading }) => {
   return (
     <Card className="flex flex-col h-full bg-white border-gray-200 smooth-transition hover:border-gray-300 hover:shadow-md">
       <CardHeader className="flex-row items-center justify-between space-y-0 pb-4 border-b border-gray-200">
@@ -21,10 +22,16 @@ export const OutputPanel: React.FC<OutputPanelProps> = ({ title, content, tokenC
         </CardTitle>
         <Badge 
           variant="secondary" 
-          className="bg-black text-white border-0 px-4 py-1.5 text-sm font-semibold hover:bg-gray-800 flex items-center gap-1.5"
+          className="bg-black text-white border-0 px-4 py-1.5 text-sm font-semibold hover:bg-gray-800 flex items-center gap-1.5 min-w-[100px] justify-center"
         >
-          <Hash className="w-3.5 h-3.5" />
-          {tokenCount} tokens
+          {isLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <>
+              <Hash className="w-3.5 h-3.5" />
+              {tokenCount} tokens
+            </>
+          )}
         </Badge>
       </CardHeader>
       <CardContent className="flex-1 p-0 relative overflow-hidden">

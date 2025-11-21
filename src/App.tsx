@@ -3,16 +3,19 @@ import { InputArea } from './components/InputArea'
 import { OutputPanel } from './components/OutputPanel'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { parseInput, toYaml, toToon, toCsv, toXml, toCollapsedJson, toPrettyJson, type InputType } from './utils/converters'
-import { countTokens, type TokenizerModel } from './utils/tokenizer'
-import { Activity, Zap } from 'lucide-react'
+import { countTokensAsync } from './utils/tokenizer'
+import { Activity, Zap, Loader2 } from 'lucide-react'
 
 function App() {
   const [input, setInput] = useState('')
   const [inputType, setInputType] = useState<InputType>('json')
-  const [tokenizerModel, setTokenizerModel] = useState<TokenizerModel>('gpt-4o')
+  const [tokenizerModel, setTokenizerModel] = useState<string>('GPT-4o')
   const [parsed, setParsed] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [tokenCounts, setTokenCounts] = useState<Record<string, number>>({})
+  const [isTokenizerLoading, setIsTokenizerLoading] = useState(false)
 
+  // Parse input
   useEffect(() => {
     if (!input.trim()) {
       setParsed(null)
@@ -29,6 +32,7 @@ function App() {
     }
   }, [input, inputType])
 
+  // Generate outputs
   const outputs = useMemo(() => {
     if (!parsed) return []
 
@@ -40,14 +44,37 @@ function App() {
     const xml = toXml(parsed)
 
     return [
-      { id: 'pretty', title: 'Prettified JSON', content: pretty, language: 'json', tokens: countTokens(pretty, tokenizerModel) },
-      { id: 'collapsed', title: 'Collapsed JSON', content: collapsed, language: 'json', tokens: countTokens(collapsed, tokenizerModel) },
-      { id: 'yaml', title: 'YAML', content: yaml, language: 'yaml', tokens: countTokens(yaml, tokenizerModel) },
-      { id: 'toon', title: 'TOON', content: toon, language: 'json', tokens: countTokens(toon, tokenizerModel), highlight: true },
-      { id: 'csv', title: 'CSV', content: csv, language: 'plaintext', tokens: countTokens(csv, tokenizerModel) },
-      { id: 'xml', title: 'XML', content: xml, language: 'xml', tokens: countTokens(xml, tokenizerModel) },
+      { id: 'pretty', title: 'Prettified JSON', content: pretty, language: 'json' },
+      { id: 'collapsed', title: 'Collapsed JSON', content: collapsed, language: 'json' },
+      { id: 'yaml', title: 'YAML', content: yaml, language: 'yaml' },
+      { id: 'toon', title: 'TOON', content: toon, language: 'json', highlight: true },
+      { id: 'csv', title: 'CSV', content: csv, language: 'plaintext' },
+      { id: 'xml', title: 'XML', content: xml, language: 'xml' },
     ]
-  }, [parsed, tokenizerModel])
+  }, [parsed])
+
+  // Count tokens asynchronously
+  useEffect(() => {
+    if (outputs.length === 0) return
+
+    const updateTokens = async () => {
+      setIsTokenizerLoading(true)
+      const newCounts: Record<string, number> = {}
+      
+      try {
+        await Promise.all(outputs.map(async (out) => {
+          newCounts[out.id] = await countTokensAsync(out.content, tokenizerModel)
+        }))
+        setTokenCounts(newCounts)
+      } catch (e) {
+        console.error('Error counting tokens:', e)
+      } finally {
+        setIsTokenizerLoading(false)
+      }
+    }
+
+    updateTokens()
+  }, [outputs, tokenizerModel])
 
   return (
     <div className="min-h-screen gradient-bg">
@@ -76,6 +103,7 @@ function App() {
             tokenizerModel={tokenizerModel}
             onTokenizerModelChange={setTokenizerModel}
             error={error}
+            isTokenizerLoading={isTokenizerLoading}
           />
         </div>
 
@@ -102,8 +130,9 @@ function App() {
                   <OutputPanel
                     title={out.title}
                     content={out.content}
-                    tokenCount={out.tokens}
+                    tokenCount={tokenCounts[out.id] || 0}
                     language={out.language}
+                    isLoading={isTokenizerLoading}
                   />
                 </TabsContent>
               ))}
@@ -114,12 +143,13 @@ function App() {
         {/* Footer stats */}
         {parsed && (
           <div className="glass rounded-xl p-4 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 flex items-center justify-center gap-2">
               Powered by{' '}
-              <span className="font-semibold text-gray-900">js-tiktoken</span>
+              <span className="font-semibold text-gray-900">@xenova/transformers</span>
               {' '} • Model:{' '}
               <span className="font-semibold text-gray-900">{tokenizerModel}</span>
               {' '} • {outputs.length} formats analyzed
+              {isTokenizerLoading && <Loader2 className="w-3 h-3 animate-spin" />}
             </p>
           </div>
         )}
