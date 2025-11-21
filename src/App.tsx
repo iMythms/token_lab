@@ -110,16 +110,13 @@ function App() {
         {parsed && outputs.length > 0 && (
           <div className="glass-strong rounded-2xl p-6 smooth-transition">
             <Tabs defaultValue="pretty" className="w-full">
-              <TabsList className="grid w-full grid-cols-6 bg-gray-100 p-1.5 rounded-lg gap-1">
+              <TabsList className="grid w-full grid-cols-6 bg-gray-100 p-1 rounded-lg gap-1">
                 {outputs.map((out) => (
                   <TabsTrigger
                     key={out.id}
                     value={out.id}
-                    className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-md smooth-transition relative font-medium"
+                    className="data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-sm smooth-transition font-medium text-sm py-2"
                   >
-                    {out.highlight && (
-                      <Zap className="w-3 h-3 absolute -top-1 -right-1 text-black data-[state=active]:text-yellow-400" />
-                    )}
                     {out.title.split(' ')[0]}
                   </TabsTrigger>
                 ))}
